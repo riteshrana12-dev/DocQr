@@ -33,12 +33,13 @@ button:disabled {
   margin-top: 10px;
 }
 
-/* 🔳 QR WRAPPER */
+/* 🔳 QR WRAPPER (RESERVE SPACE) */
 .qr-wrapper {
   margin-top: 20px;
+  min-height: 300px;
 }
 
-/* ⏳ Skeleton QR */
+/* ⏳ SKELETON QR */
 .qr-skeleton {
   width: 240px;
   height: 240px;
@@ -49,12 +50,25 @@ button:disabled {
   position: relative;
 }
 
+/* ✅ COLOR FILL (BOTTOM → TOP) */
 .qr-skeleton-fill {
   position: absolute;
-  bottom: 0;
-  width: 100%;
+  inset: 0;
   background: linear-gradient(180deg, #60a5fa, #2563eb);
-  transition: height 0.3s ease;
+  transform-origin: bottom;
+  transform: scaleY(0);
+  transition: transform 0.25s ease;
+}
+
+/* OPTIONAL: subtle grid feel (QR-like) */
+.qr-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
 }
 
 .progress-text {

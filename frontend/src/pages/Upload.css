@@ -1,28 +1,90 @@
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #2a2a2a;
+.container {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 20px;
   border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #94a3b8;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+/* 🔳 QR WRAPPER */
+.qr-wrapper {
+  margin-top: 20px;
+}
+
+/* ⏳ Skeleton QR */
+.qr-skeleton {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #e5e7eb;
   overflow: hidden;
+  position: relative;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #00ffcc, #00aaff);
-  transition: width 0.3s ease;
+.qr-skeleton-fill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  transition: height 0.3s ease;
 }
 
-.fade-in {
-  animation: fadeIn 0.4s ease-in;
+.progress-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #374151;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* ✅ REAL QR */
+.qr-section {
+  text-align: center;
+}
+
+.qr-image {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+}
+
+.qr-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.access-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
 }

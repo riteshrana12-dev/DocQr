@@ -1,16 +1,16 @@
 import { useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import QRCode from "qrcode";
-import "./Upload.css";
 
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [pin, setPin] = useState("");
 
-  const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const [qr, setQr] = useState("");
+  const [link, setLink] = useState("");
   const [error, setError] = useState("");
 
   const handleUpload = async () => {
@@ -19,42 +19,45 @@ export default function Upload() {
       return;
     }
 
-    // 🔄 RESET EVERYTHING FOR NEW UPLOAD
-    setError("");
-    setQr("");
-    setProgress(0);
+    // RESET STATE (important for sync)
     setUploading(true);
+    setProgress(0);
+    setQr("");
+    setLink("");
+    setError("");
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("pin", pin);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
+      const res = await API.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
 
-          // ⏳ Upload progress (max 90%)
-          onUploadProgress: (e) => {
-            if (!e.total) return;
-            const percent = Math.round((e.loaded * 90) / e.total);
-            setProgress(percent);
-          },
-        }
-      );
+        // ⏳ Upload progress (max 90%)
+        onUploadProgress: (e) => {
+          if (!e.total) return;
+          const percent = Math.min(Math.round((e.loaded * 90) / e.total), 90);
+          setProgress(percent);
+        },
+      });
 
-      // ✅ BACKEND RESPONSE RECEIVED
-      // ⏳ Finalizing (90 → 100)
-      setProgress(100);
+      // ⏱ Backend finished → generate QR
+      const accessUrl = res.data.accessUrl;
 
-      // ✅ Generate QR ONLY NOW (SYNC POINT)
-      const qrDataUrl = await QRCode.toDataURL(res.data.accessUrl);
+      const qrDataUrl = await QRCode.toDataURL(accessUrl, {
+        width: 240,
+        margin: 2,
+      });
+
       setQr(qrDataUrl);
+      setLink(accessUrl);
+
+      // ✅ Only now reach 100%
+      setProgress(100);
     } catch (err) {
       console.error(err);
-      setError("Upload failed. Try again.");
+      setError(err.response?.data?.error || "Upload failed");
       setProgress(0);
     } finally {
       setUploading(false);
@@ -66,6 +69,7 @@ export default function Upload() {
       <h2>Secure File Upload</h2>
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+
       <input
         type="password"
         placeholder="Enter PIN"
@@ -74,27 +78,47 @@ export default function Upload() {
       />
 
       <button onClick={handleUpload} disabled={uploading}>
-        {uploading ? "Uploading..." : "Upload"}
+        {uploading ? "Uploading…" : "Upload"}
       </button>
-
-      {/* ⏳ Progress Bar */}
-      {uploading && (
-        <div className="progress-wrapper">
-          <div className="progress-bar">
-            <div style={{ width: `${progress}%` }} />
-          </div>
-          <p>{progress}%</p>
-          {progress < 100 && <p>Uploading & processing…</p>}
-        </div>
-      )}
 
       {error && <p className="error">{error}</p>}
 
-      {/* ✅ QR APPEARS ONLY WHEN PROGRESS = 100 AND QR EXISTS */}
-      {progress === 100 && qr && (
-        <div className="qr-section">
-          <img src={qr} alt="QR Code" />
-          <p>Scan to access file</p>
+      {/* 🔳 QR AREA */}
+      {(uploading || qr) && (
+        <div className="qr-wrapper">
+          {/* ⏳ Skeleton QR (0–99%) */}
+          {uploading && progress < 100 && (
+            <>
+              <div className="qr-skeleton">
+                <div
+                  className="qr-skeleton-fill"
+                  style={{ height: `${progress}%` }}
+                />
+              </div>
+
+              <p className="progress-text">
+                Uploading & processing… {progress}%
+              </p>
+            </>
+          )}
+
+          {/* ✅ REAL QR + URL (ONLY WHEN READY) */}
+          {progress === 100 && qr && (
+            <div className="qr-section">
+              <img src={qr} alt="QR Code" className="qr-image" />
+
+              <p className="qr-text">Scan the QR or use the link below</p>
+
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="access-link"
+              >
+                {link}
+              </a>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ export default function Access() {
   const [loading, setLoading] = useState(false);
 
   const [fileInfo, setFileInfo] = useState(null);
-  const [blobUrl, setBlobUrl] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
 
   const [darkMode, setDarkMode] = useState(true);
 
@@ -32,22 +32,19 @@ export default function Access() {
         body: JSON.stringify({ pin }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error || "Access denied");
         setLoading(false);
         return;
       }
 
-      /* 📦 Read file */
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-
-      setBlobUrl(url);
+      /* ✅ Cloudinary response */
       setFileInfo({
-        name: res.headers.get("X-Filename") || "file",
-        size: ((res.headers.get("X-Filesize") || 0) / 1024).toFixed(1) + " KB",
+        name: data.fileName,
       });
+      setDownloadUrl(data.downloadUrl);
     } catch (err) {
       console.error(err);
       setError("Network error");
@@ -56,15 +53,9 @@ export default function Access() {
     }
   };
 
-  /* ⬇ Download */
+  /* ⬇ Download via Cloudinary */
   const downloadFile = () => {
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = fileInfo.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(blobUrl);
+    window.open(downloadUrl, "_blank");
   };
 
   return (
@@ -102,9 +93,6 @@ export default function Access() {
             <div className="file-info">
               <p>
                 <strong>Name:</strong> {fileInfo.name}
-              </p>
-              <p>
-                <strong>Size:</strong> {fileInfo.size}
               </p>
             </div>
 

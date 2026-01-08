@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
 const uploadRoutes = require("./routes/upload");
 const accessRoutes = require("./routes/access");
@@ -9,6 +11,7 @@ const qrRoutes = require("./routes/qr");
 
 const app = express();
 
+// ✅ CORS
 app.use(
   cors({
     origin: ["https://docqr-frontend.onrender.com"],
@@ -18,6 +21,14 @@ app.use(
 );
 
 app.use(express.json());
+
+// ✅ CREATE uploads FOLDER (🔥 VERY IMPORTANT FOR RENDER)
+const uploadDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("📁 uploads folder created");
+}
 
 // MongoDB
 mongoose

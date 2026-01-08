@@ -1,15 +1,16 @@
 import { useState } from "react";
 import axios from "axios";
+import QRCode from "qrcode";
 import "./Upload.css";
 
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [pin, setPin] = useState("");
+
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
 
   const [qr, setQr] = useState("");
-  const [link, setLink] = useState("");
   const [error, setError] = useState("");
 
   const handleUpload = async () => {
@@ -18,10 +19,9 @@ export default function Upload() {
       return;
     }
 
-    // Reset state
+    // 🔄 RESET EVERYTHING FOR NEW UPLOAD
     setError("");
     setQr("");
-    setLink("");
     setProgress(0);
     setUploading(true);
 
@@ -34,28 +34,27 @@ export default function Upload() {
         `${import.meta.env.VITE_API_URL}/upload`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
 
-          // 🔥 REAL upload progress
+          // ⏳ Upload progress (max 90%)
           onUploadProgress: (e) => {
             if (!e.total) return;
-
-            // NEVER allow 100% here
-            const percent = Math.round((e.loaded * 95) / e.total);
+            const percent = Math.round((e.loaded * 90) / e.total);
             setProgress(percent);
           },
         }
       );
 
-      // ✅ Backend response received → NOW 100%
+      // ✅ BACKEND RESPONSE RECEIVED
+      // ⏳ Finalizing (90 → 100)
       setProgress(100);
-      setQr(res.data.qrCode);
-      setLink(res.data.accessUrl);
+
+      // ✅ Generate QR ONLY NOW (SYNC POINT)
+      const qrDataUrl = await QRCode.toDataURL(res.data.accessUrl);
+      setQr(qrDataUrl);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || "Upload failed");
+      setError("Upload failed. Try again.");
       setProgress(0);
     } finally {
       setUploading(false);
@@ -64,10 +63,9 @@ export default function Upload() {
 
   return (
     <div className="container">
-      <h2>🔐 Secure File Upload</h2>
+      <h2>Secure File Upload</h2>
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-
       <input
         type="password"
         placeholder="Enter PIN"
@@ -79,24 +77,24 @@ export default function Upload() {
         {uploading ? "Uploading..." : "Upload"}
       </button>
 
-      {/* 🔄 Progress */}
+      {/* ⏳ Progress Bar */}
       {uploading && (
         <div className="progress-wrapper">
           <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div style={{ width: `${progress}%` }} />
           </div>
           <p>{progress}%</p>
-          {progress >= 95 && <p>Finalizing…</p>}
+          {progress < 100 && <p>Uploading & processing…</p>}
         </div>
       )}
 
       {error && <p className="error">{error}</p>}
 
-      {/* ✅ QR only AFTER response */}
+      {/* ✅ QR APPEARS ONLY WHEN PROGRESS = 100 AND QR EXISTS */}
       {progress === 100 && qr && (
-        <div className="qr-section fade-in">
+        <div className="qr-section">
           <img src={qr} alt="QR Code" />
-          <p className="link">{link}</p>
+          <p>Scan to access file</p>
         </div>
       )}
     </div>

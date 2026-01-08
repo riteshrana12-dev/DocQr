@@ -1,10 +1,11 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const path = require("path");
 const File = require("../models/File");
+const axios = require("axios");
 
 const router = express.Router();
 
+/* 🔓 Access File */
 router.post("/:id", async (req, res) => {
   try {
     const { pin } = req.body;
@@ -20,45 +21,42 @@ router.post("/:id", async (req, res) => {
       return res.status(404).json({ error: "File not found" });
     }
 
-    /* ⏳ EXPIRY CHECK */
+    /* ⏳ Expiry check */
     if (fileDoc.expiresAt && new Date() > fileDoc.expiresAt) {
       return res.status(410).json({ error: "File expired" });
     }
 
-    /* 🔒 ATTEMPT LIMIT */
-    if (fileDoc.attemptsLeft !== undefined && fileDoc.attemptsLeft <= 0) {
+    /* 🔒 Attempt limit */
+    if (fileDoc.attemptsLeft <= 0) {
       return res.status(403).json({ error: "Too many incorrect attempts" });
     }
 
-    /* 🔐 PIN VERIFY */
+    /* 🔐 PIN verify */
     const isMatch = await bcrypt.compare(pin, fileDoc.pinHash);
 
     if (!isMatch) {
-      if (fileDoc.attemptsLeft !== undefined) {
-        fileDoc.attemptsLeft -= 1;
-        await fileDoc.save();
-      }
+      fileDoc.attemptsLeft -= 1;
+      await fileDoc.save();
 
       return res.status(401).json({
-        error:
-          fileDoc.attemptsLeft !== undefined
-            ? `Invalid PIN (${fileDoc.attemptsLeft} attempts left)`
-            : "Invalid PIN",
+        error: `Invalid PIN (${fileDoc.attemptsLeft} attempts left)`,
       });
     }
 
-    /* 📄 FILE PATH */
-    const filePath = path.join(__dirname, "../uploads", fileDoc.storedName);
+    /* 📦 Download from Cloudinary */
+    const response = await axios.get(fileDoc.fileUrl, {
+      responseType: "stream",
+    });
 
-    /* 📦 METADATA HEADERS (for frontend UI) */
+    /* 📄 Headers for frontend UI */
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${fileDoc.originalName}"`
     );
     res.setHeader("X-Filename", fileDoc.originalName);
-    res.setHeader("X-Filesize", fileDoc.size || 0);
+    res.setHeader("X-Filesize", fileDoc.size);
 
-    return res.sendFile(path.resolve(filePath));
+    response.data.pipe(res);
   } catch (err) {
     console.error("Access error:", err);
     res.status(500).json({ error: "Access failed" });

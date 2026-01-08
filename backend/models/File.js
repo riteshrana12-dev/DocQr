@@ -1,21 +1,43 @@
 const mongoose = require("mongoose");
 
-const fileSchema = new mongoose.Schema({
-  filename: String,
-  filepath: String,
-  pin: String,
+const FileSchema = new mongoose.Schema(
+  {
+    /* 📄 FILE INFO */
+    originalName: {
+      type: String,
+      required: true,
+    },
 
-  attemptsLeft: {
-    type: Number,
-    default: 3,
+    fileUrl: {
+      type: String,
+      required: true, // Cloudinary URL
+    },
+
+    size: {
+      type: Number, // bytes
+      required: true,
+    },
+
+    /* 🔐 SECURITY */
+    pinHash: {
+      type: String,
+      required: true,
+    },
+
+    attemptsLeft: {
+      type: Number,
+      default: 3, // 🔒 PIN attempt limit
+    },
+
+    /* ⏳ EXPIRY */
+    expiresAt: {
+      type: Date,
+      default: () => Date.now() + 24 * 60 * 60 * 1000, // ⏰ 24 hours
+    },
   },
+  {
+    timestamps: true, // createdAt & updatedAt
+  }
+);
 
-  expiresAt: {
-    type: Date,
-    required: true,
-  },
-
-  size: Number,
-});
-
-module.exports = mongoose.model("File", fileSchema);
+module.exports = mongoose.model("File", FileSchema);

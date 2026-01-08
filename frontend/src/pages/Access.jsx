@@ -8,18 +8,22 @@ export default function Access() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [fileInfo, setFileInfo] = useState(null);
   const [blobUrl, setBlobUrl] = useState("");
-  const [dark, setDark] = useState(true);
 
+  const [darkMode, setDarkMode] = useState(true);
+
+  /* 🌗 Dark / Light mode */
   useEffect(() => {
-    document.body.className = dark ? "dark" : "light";
-  }, [dark]);
+    document.body.className = darkMode ? "dark" : "light";
+  }, [darkMode]);
 
+  /* 🔓 Submit PIN */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/access/${id}`, {
@@ -30,56 +34,62 @@ export default function Access() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error);
+        setError(data.error || "Access denied");
         setLoading(false);
         return;
       }
 
+      /* 📦 Read file */
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
       setBlobUrl(url);
       setFileInfo({
-        name: res.headers.get("X-Filename"),
-        size: (res.headers.get("X-Filesize") / 1024).toFixed(1) + " KB",
+        name: res.headers.get("X-Filename") || "file",
+        size: ((res.headers.get("X-Filesize") || 0) / 1024).toFixed(1) + " KB",
       });
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError("Network error");
     } finally {
       setLoading(false);
     }
   };
 
-  const download = () => {
+  /* ⬇ Download */
+  const downloadFile = () => {
     const a = document.createElement("a");
     a.href = blobUrl;
     a.download = fileInfo.name;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(blobUrl);
   };
 
   return (
     <div className="access-page">
-      <div className="card slide-up">
-        <div className="theme-toggle" onClick={() => setDark(!dark)}>
-          {dark ? "🌙" : "☀️"}
-        </div>
+      <div className="access-card slide-up">
+        <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)}>
+          {darkMode ? "🌙" : "☀️"}
+        </button>
 
         {!fileInfo ? (
           <>
             <h2>🔐 Secure Access</h2>
-            <p>Enter PIN to unlock file</p>
+            <p className="subtitle">Enter PIN to unlock file</p>
 
             <form onSubmit={handleSubmit}>
               <input
                 type="password"
-                placeholder="PIN"
+                placeholder="Enter PIN"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 required
               />
-              <button disabled={loading}>
-                {loading ? "Checking..." : "Unlock"}
+
+              <button type="submit" disabled={loading}>
+                {loading ? "Verifying..." : "Unlock"}
               </button>
             </form>
 
@@ -88,10 +98,17 @@ export default function Access() {
         ) : (
           <>
             <h2>📄 File Ready</h2>
-            <p>{fileInfo.name}</p>
-            <p>{fileInfo.size}</p>
 
-            <button className="download" onClick={download}>
+            <div className="file-info">
+              <p>
+                <strong>Name:</strong> {fileInfo.name}
+              </p>
+              <p>
+                <strong>Size:</strong> {fileInfo.size}
+              </p>
+            </div>
+
+            <button className="download-btn" onClick={downloadFile}>
               ⬇ Download
             </button>
           </>

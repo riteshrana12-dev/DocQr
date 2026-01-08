@@ -1,38 +1,35 @@
 const mongoose = require("mongoose");
 
-const FileSchema = new mongoose.Schema(
+const fileSchema = new mongoose.Schema(
   {
-    /* 📄 FILE INFO */
+    /* Original uploaded file name */
     originalName: {
       type: String,
       required: true,
     },
 
-    fileUrl: {
+    /* Cloudinary secure URL */
+    cloudinaryUrl: {
       type: String,
-      required: true, // Cloudinary URL
-    },
-
-    size: {
-      type: Number, // bytes
       required: true,
     },
 
-    /* 🔐 SECURITY */
+    /* Encrypted PIN */
     pinHash: {
       type: String,
       required: true,
     },
 
+    /* Remaining PIN attempts */
     attemptsLeft: {
       type: Number,
-      default: 3, // 🔒 PIN attempt limit
+      default: 5, // 🔒 PIN attempt limit
     },
 
-    /* ⏳ EXPIRY */
+    /* File expiry time */
     expiresAt: {
       type: Date,
-      default: () => Date.now() + 24 * 60 * 60 * 1000, // ⏰ 24 hours
+      default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // ⏳ 24 hours
     },
   },
   {
@@ -40,4 +37,4 @@ const FileSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("File", FileSchema);
+module.exports = mongoose.model("File", fileSchema);

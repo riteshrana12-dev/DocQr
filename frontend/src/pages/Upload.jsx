@@ -8,10 +8,11 @@ export default function Upload() {
   const [qr, setQr] = useState("");
   const [link, setLink] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleUpload = async () => {
     setError("");
+    setProgress(0);
 
     if (!file || !pin) {
       setError("File and PIN are required");
@@ -19,36 +20,33 @@ export default function Upload() {
     }
 
     try {
-      setLoading(true);
-
       const formData = new FormData();
       formData.append("file", file);
       formData.append("pin", pin);
 
-      /* 🚀 Upload (FAST – no backend QR) */
-      const res = await API.post("/upload", formData);
-
-      const accessUrl = res.data.accessUrl;
-      setLink(accessUrl);
-
-      /* ⚡ INSTANT QR (Frontend) */
-      const qrCode = await QRCode.toDataURL(accessUrl, {
-        width: 300,
-        margin: 2,
+      const res = await API.post("/upload", formData, {
+        onUploadProgress: (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setProgress(percent);
+        },
       });
 
-      setQr(qrCode);
+      const accessUrl = res.data.downloadUrl || res.data.accessUrl;
+
+      setLink(accessUrl);
+
+      // ⚡ Instant QR generation (no backend delay)
+      const qrImage = await QRCode.toDataURL(accessUrl);
+      setQr(qrImage);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || "Upload failed. Try again.");
-    } finally {
-      setLoading(false);
+      setError(err.response?.data?.error || "Upload failed");
     }
   };
 
   return (
     <div className="container">
-      <h2>🔐 Secure File Upload</h2>
+      <h2>Secure File Upload</h2>
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
 
@@ -59,9 +57,9 @@ export default function Upload() {
         onChange={(e) => setPin(e.target.value)}
       />
 
-      <button onClick={handleUpload} disabled={loading}>
-        {loading ? "Uploading..." : "Upload"}
-      </button>
+      <button onClick={handleUpload}>Upload</button>
+
+      {progress > 0 && <p>Uploading: {progress}%</p>}
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 

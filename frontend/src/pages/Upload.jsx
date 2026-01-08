@@ -1,16 +1,15 @@
 import { useState } from "react";
-import API from "../services/api";
+import axios from "axios";
 import "./Upload.css";
 
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [pin, setPin] = useState("");
-
-  const [qr, setQr] = useState(null);
-  const [link, setLink] = useState("");
-
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+
+  const [qr, setQr] = useState("");
+  const [link, setLink] = useState("");
   const [error, setError] = useState("");
 
   const handleUpload = async () => {
@@ -19,9 +18,9 @@ export default function Upload() {
       return;
     }
 
-    // 🔁 RESET STATE FOR NEW UPLOAD
+    // RESET state for new upload
     setError("");
-    setQr(null);
+    setQr("");
     setLink("");
     setProgress(0);
     setUploading(true);
@@ -31,26 +30,32 @@ export default function Upload() {
     formData.append("pin", pin);
 
     try {
-      const res = await API.post("/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        // 📊 REAL upload progress
-        onUploadProgress: (e) => {
-          const percent = Math.round((e.loaded * 100) / e.total);
-          setProgress(percent);
-        },
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
 
-      // ✅ ENSURE progress is complete BEFORE showing QR
+          // 🔥 REAL upload progress
+          onUploadProgress: (event) => {
+            if (event.total) {
+              const percent = Math.round((event.loaded * 100) / event.total);
+              setProgress(percent);
+            }
+          },
+        }
+      );
+
+      // ✅ Only here upload is COMPLETE
       setProgress(100);
-
-      // ✅ ONLY NOW show QR (valid & correct)
       setQr(res.data.qrCode);
       setLink(res.data.accessUrl);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "Upload failed");
+      setProgress(0);
     } finally {
       setUploading(false);
     }
@@ -73,11 +78,14 @@ export default function Upload() {
         {uploading ? "Uploading..." : "Upload"}
       </button>
 
-      {/* 📊 Progress Bar */}
+      {/* 🔄 Progress Bar */}
       {uploading && (
         <div className="progress-wrapper">
           <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div
+              className="progress-fill"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
           <p>{progress}%</p>
         </div>
@@ -85,7 +93,7 @@ export default function Upload() {
 
       {error && <p className="error">{error}</p>}
 
-      {/* ✅ QR appears ONLY when upload is complete */}
+      {/* ✅ QR only when upload + response done */}
       {progress === 100 && qr && (
         <div className="qr-section fade-in">
           <img src={qr} alt="QR Code" />

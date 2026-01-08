@@ -1,43 +1,51 @@
 const express = require("express");
 const multer = require("multer");
 const bcrypt = require("bcryptjs");
-const QRCode = require("qrcode");
-const cloudinary = require("../utils/cloudinary");
 const File = require("../models/File");
+const cloudinary = require("../utils/cloudinary");
 
 const router = express.Router();
-const upload = multer({ dest: "temp/" });
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     const { pin } = req.body;
     if (!req.file || !pin) {
-      return res.status(400).json({ error: "File & PIN required" });
+      return res.status(400).json({ error: "File and PIN required" });
     }
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "auto",
-    });
+    /* ☁ Upload to Cloudinary */
+    const uploadResult = await cloudinary.uploader.upload_stream(
+      { resource_type: "auto" },
+      async (error, result) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ error: "Upload failed" });
+        }
 
-    const pinHash = await bcrypt.hash(pin, 10);
+        const pinHash = await bcrypt.hash(pin, 10);
 
-    const fileDoc = await File.create({
-      originalName: req.file.originalname,
-      cloudinaryUrl: result.secure_url,
-      pinHash,
-    });
+        const fileDoc = await File.create({
+          originalName: req.file.originalname,
+          cloudinaryUrl: result.secure_url,
+          size: req.file.size,
+          pinHash,
+          attemptsLeft: 5,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+        });
 
-    const accessUrl = `${process.env.FRONTEND_BASE_URL}/access/${fileDoc._id}`;
-    const qrCode = await QRCode.toDataURL(accessUrl);
+        /* ⚡ FAST RESPONSE */
+        return res.json({
+          success: true,
+          fileId: fileDoc._id,
+          accessUrl: `${process.env.FRONTEND_BASE_URL}/access/${fileDoc._id}`,
+        });
+      }
+    );
 
-    res.json({
-      message: "Upload success",
-      qrCode,
-      accessUrl,
-    });
+    uploadResult.end(req.file.buffer);
   } catch (err) {
-    console.error("Upload error:", err);
+    console.error(err);
     res.status(500).json({ error: "Upload failed" });
   }
 });

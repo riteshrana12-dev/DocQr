@@ -18,7 +18,7 @@ export default function Upload() {
       return;
     }
 
-    // RESET state for new upload
+    // Reset state
     setError("");
     setQr("");
     setLink("");
@@ -39,16 +39,17 @@ export default function Upload() {
           },
 
           // 🔥 REAL upload progress
-          onUploadProgress: (event) => {
-            if (event.total) {
-              const percent = Math.round((event.loaded * 100) / event.total);
-              setProgress(percent);
-            }
+          onUploadProgress: (e) => {
+            if (!e.total) return;
+
+            // NEVER allow 100% here
+            const percent = Math.round((e.loaded * 95) / e.total);
+            setProgress(percent);
           },
         }
       );
 
-      // ✅ Only here upload is COMPLETE
+      // ✅ Backend response received → NOW 100%
       setProgress(100);
       setQr(res.data.qrCode);
       setLink(res.data.accessUrl);
@@ -78,22 +79,20 @@ export default function Upload() {
         {uploading ? "Uploading..." : "Upload"}
       </button>
 
-      {/* 🔄 Progress Bar */}
+      {/* 🔄 Progress */}
       {uploading && (
         <div className="progress-wrapper">
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progress}%` }}
-            ></div>
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
           <p>{progress}%</p>
+          {progress >= 95 && <p>Finalizing…</p>}
         </div>
       )}
 
       {error && <p className="error">{error}</p>}
 
-      {/* ✅ QR only when upload + response done */}
+      {/* ✅ QR only AFTER response */}
       {progress === 100 && qr && (
         <div className="qr-section fade-in">
           <img src={qr} alt="QR Code" />

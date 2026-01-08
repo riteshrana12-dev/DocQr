@@ -1,5 +1,6 @@
 import { useState } from "react";
 import API from "../services/api";
+import QRCode from "qrcode";
 
 export default function Upload() {
   const [file, setFile] = useState(null);
@@ -7,6 +8,7 @@ export default function Upload() {
   const [qr, setQr] = useState("");
   const [link, setLink] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async () => {
     setError("");
@@ -17,27 +19,36 @@ export default function Upload() {
     }
 
     try {
+      setLoading(true);
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("pin", pin);
 
-      const res = await API.post("/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      /* 🚀 Upload (FAST – no backend QR) */
+      const res = await API.post("/upload", formData);
+
+      const accessUrl = res.data.accessUrl;
+      setLink(accessUrl);
+
+      /* ⚡ INSTANT QR (Frontend) */
+      const qrCode = await QRCode.toDataURL(accessUrl, {
+        width: 300,
+        margin: 2,
       });
 
-      setQr(res.data.qrCode);
-      setLink(res.data.accessUrl);
+      setQr(qrCode);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "Upload failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="container">
-      <h2>Secure File Upload</h2>
+      <h2>🔐 Secure File Upload</h2>
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
 
@@ -48,7 +59,9 @@ export default function Upload() {
         onChange={(e) => setPin(e.target.value)}
       />
 
-      <button onClick={handleUpload}>Upload</button>
+      <button onClick={handleUpload} disabled={loading}>
+        {loading ? "Uploading..." : "Upload"}
+      </button>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 

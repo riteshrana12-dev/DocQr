@@ -1,0 +1,71 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+body {
+  background: #f4f6f8;
+  min-height: 100vh;
+}
+
+/* Center container */
+.container {
+  max-width: 420px;
+  margin: 60px auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Inputs */
+input[type="file"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Button */
+button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* QR section */
+.qr-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.qr-section img {
+  margin-top: 10px;
+  width: 180px;
+}
+
+.link {
+  font-size: 12px;
+  word-break: break-all;
+  margin-top: 10px;
+  color: #555;
+}

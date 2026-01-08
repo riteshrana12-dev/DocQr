@@ -9,20 +9,14 @@ const qrRoutes = require("./routes/qr");
 
 const app = express();
 
-/* ✅ CORS — VERY IMPORTANT */
+/* ✅ FIXED CORS (NO wildcard route) */
 app.use(
   cors({
-    origin: [
-      "https://docqr-frontend.onrender.com",
-      "http://localhost:5173", // local dev (safe to keep)
-    ],
-    methods: ["GET", "POST", "OPTIONS"],
+    origin: ["https://docqr-frontend.onrender.com", "http://localhost:5173"],
+    methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
-
-/* Handle preflight requests */
-app.options("*", cors());
 
 app.use(express.json());
 

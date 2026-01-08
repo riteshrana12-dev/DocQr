@@ -6,21 +6,33 @@ export default function Upload() {
   const [pin, setPin] = useState("");
   const [qr, setQr] = useState("");
   const [link, setLink] = useState("");
+  const [error, setError] = useState("");
 
   const handleUpload = async () => {
+    setError("");
+
     if (!file || !pin) {
-      alert("File & PIN required");
+      setError("File and PIN are required");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("pin", pin);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("pin", pin);
 
-    const res = await API.post("/upload", formData);
+      const res = await API.post("/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-    setQr(res.data.qrCode);
-    setLink(res.data.accessUrl);
+      setQr(res.data.qrCode);
+      setLink(res.data.accessUrl);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || "Upload failed. Try again.");
+    }
   };
 
   return (
@@ -37,6 +49,8 @@ export default function Upload() {
       />
 
       <button onClick={handleUpload}>Upload</button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {qr && (
         <div className="qr-section">

@@ -3,6 +3,8 @@ import API from "../services/api";
 import QRCode from "qrcode";
 import "./Upload.css";
 
+const QR_SIZE = 21 * 21; // QR v1 grid
+
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [pin, setPin] = useState("");
@@ -12,7 +14,6 @@ export default function Upload() {
 
   const [qr, setQr] = useState("");
   const [accessUrl, setAccessUrl] = useState("");
-
   const [qrReady, setQrReady] = useState(false);
 
   const [error, setError] = useState("");
@@ -23,7 +24,7 @@ export default function Upload() {
       return;
     }
 
-    // 🔄 RESET
+    // 🔄 RESET STATE
     setUploading(true);
     setProgress(0);
     setQr("");
@@ -39,7 +40,7 @@ export default function Upload() {
       const res = await API.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
 
-        // ⏳ Upload progress: 0 → 90
+        // ⏳ Upload progress (0 → 90)
         onUploadProgress: (e) => {
           if (!e.total) return;
           const percent = Math.min(Math.round((e.loaded / e.total) * 90), 90);
@@ -47,19 +48,19 @@ export default function Upload() {
         },
       });
 
-      // ✅ Backend finished → access URL received
-      const accessUrl = res.data.accessUrl;
+      // ✅ Backend finished
+      const url = res.data.accessUrl;
 
-      // 🎯 Generate QR ONLY NOW
-      const qrDataUrl = await QRCode.toDataURL(accessUrl, {
+      // 🎯 Generate QR ONLY after response
+      const qrDataUrl = await QRCode.toDataURL(url, {
         width: 240,
         margin: 2,
       });
 
       setQr(qrDataUrl);
-      setAccessUrl(accessUrl);
+      setAccessUrl(url);
 
-      // ✅ FINAL STATE
+      // 🎉 FINAL STEP
       setProgress(100);
       setQrReady(true);
     } catch (err) {
@@ -70,6 +71,9 @@ export default function Upload() {
       setUploading(false);
     }
   };
+
+  // 🔢 How many QR blocks to reveal
+  const visibleCells = Math.floor((progress / 100) * QR_SIZE);
 
   return (
     <div className="container">
@@ -90,17 +94,21 @@ export default function Upload() {
 
       {error && <p className="error">{error}</p>}
 
-      {/* 🔳 QR AREA (STAYS MOUNTED) */}
+      {/* 🔳 QR AREA (RESERVED SPACE) */}
       {progress > 0 && (
         <div className="qr-wrapper">
-          {/* ⏳ SKELETON */}
+          {/* ⏳ QR SKELETON */}
           {!qrReady && (
             <>
               <div className="qr-skeleton">
-                <div
-                  className="qr-skeleton-fill"
-                  style={{ height: `${progress}%` }}
-                />
+                {Array.from({ length: QR_SIZE }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`qr-cell ${
+                      i < visibleCells ? "qr-cell-filled" : ""
+                    }`}
+                  />
+                ))}
               </div>
 
               <p className="progress-text">
@@ -109,9 +117,9 @@ export default function Upload() {
             </>
           )}
 
-          {/* ✅ FINAL QR */}
+          {/* ✅ REAL QR */}
           {qrReady && (
-            <div className="qr-section">
+            <div className="qr-section fade-in">
               <img src={qr} alt="QR Code" className="qr-image" />
               <p className="qr-text">Scan or open link</p>
 

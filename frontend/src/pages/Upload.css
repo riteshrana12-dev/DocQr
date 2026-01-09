@@ -33,51 +33,43 @@ button:disabled {
   margin-top: 10px;
 }
 
-/* 🔳 QR WRAPPER (RESERVE SPACE) */
+/* 🔳 QR WRAPPER */
 .qr-wrapper {
   margin-top: 20px;
-  min-height: 300px;
 }
 
-/* ⏳ SKELETON QR */
+/* 🧩 QR SKELETON GRID */
 .qr-skeleton {
   width: 240px;
   height: 240px;
   margin: 0 auto;
-  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+  grid-template-rows: repeat(21, 1fr);
+  padding: 6px;
   background: #e5e7eb;
-  overflow: hidden;
-  position: relative;
+  border-radius: 8px;
 }
 
-/* ✅ COLOR FILL (BOTTOM → TOP) */
-.qr-skeleton-fill {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #60a5fa, #2563eb);
-  transform-origin: bottom;
-  transform: scaleY(0);
-  transition: transform 0.25s ease;
+/* QR modules */
+.qr-cell {
+  background: transparent;
+  transition: background 0.15s ease;
 }
 
-/* OPTIONAL: subtle grid feel (QR-like) */
-.qr-skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px;
-  pointer-events: none;
+/* Appearing QR blocks */
+.qr-cell-filled {
+  background: #111827;
 }
 
+/* Progress text */
 .progress-text {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 14px;
   color: #374151;
 }
 
-/* ✅ REAL QR */
+/* ✅ FINAL QR */
 .qr-section {
   text-align: center;
 }
@@ -101,4 +93,20 @@ button:disabled {
   color: #2563eb;
   text-decoration: underline;
   word-break: break-all;
+}
+
+/* ✨ FADE IN POLISH */
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

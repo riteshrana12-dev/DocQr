@@ -10,7 +10,7 @@ export default function Access() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [accessUrl, setaccessUrl] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
   const [fileName, setFileName] = useState("");
 
   const handleSubmit = async (e) => {
@@ -21,8 +21,14 @@ export default function Access() {
     try {
       const res = await API.post(`/access/${id}`, { pin });
 
-      // ✅ backend sends JSON
-      setaccessUrl(res.data.downloadUrl);
+      // ✅ STRICT CHECK
+      if (!res.data.success || !res.data.downloadUrl) {
+        setError(res.data.error || "Access denied");
+        return;
+      }
+
+      // ✅ SUCCESS
+      setDownloadUrl(res.data.downloadUrl);
       setFileName(res.data.fileName);
     } catch (err) {
       setError(err.response?.data?.error || "Network error");
@@ -34,7 +40,7 @@ export default function Access() {
   return (
     <div className="page">
       <div className="card">
-        {!accessUrl ? (
+        {!downloadUrl ? (
           <>
             <h2>🔐 Secure Access</h2>
 
@@ -57,11 +63,10 @@ export default function Access() {
         ) : (
           <>
             <h2>📄 File Ready</h2>
-
-            <p className="file-name">{fileName}</p>
+            <p>{fileName}</p>
 
             <a
-              href={accessUrl}
+              href={downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="access-link"

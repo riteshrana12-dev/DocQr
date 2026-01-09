@@ -20,29 +20,40 @@ export default function Access() {
         `/access/${id}`,
         { pin },
         {
-          responseType: "blob", // 🔥 IMPORTANT — expect FILE, not JSON
+          responseType: "blob", // 🔥 MUST be blob
+          transformResponse: (r) => r, // 🔥 disable axios JSON parsing
+          validateStatus: () => true, // 🔥 handle errors manually
         }
       );
 
-      // 📦 Create downloadable file
-      const blob = new Blob([res.data]);
-      const url = window.URL.createObjectURL(blob);
+      // ❌ Backend returned JSON error (wrong PIN, expired, etc.)
+      const contentType = res.headers["content-type"];
 
-      // 🔽 Auto-download
-      const a = document.createElement("a");
-      a.href = url;
-
-      // Try to extract filename from headers
-      const contentDisposition = res.headers["content-disposition"];
-      let filename = "downloaded-file";
-
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="(.+)"/);
-        if (match && match[1]) {
-          filename = match[1];
-        }
+      if (contentType?.includes("application/json")) {
+        const text = await res.data.text();
+        const json = JSON.parse(text);
+        setError(json.error || "Access denied");
+        return;
       }
 
+      // ✅ FILE RESPONSE
+      const blob = new Blob([res.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      // 🔽 Extract filename safely
+      let filename = "download";
+      const disposition = res.headers["content-disposition"];
+
+      if (disposition) {
+        const match = disposition.match(
+          /filename\*=UTF-8''(.+)|filename="(.+)"/
+        );
+        filename = decodeURIComponent(match?.[1] || match?.[2] || filename);
+      }
+
+      // 🔽 Trigger download
+      const a = document.createElement("a");
+      a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
@@ -51,19 +62,7 @@ export default function Access() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Access error:", err);
-
-      // If backend returned JSON error instead of file
-      if (err.response?.data instanceof Blob) {
-        const text = await err.response.data.text();
-        try {
-          const json = JSON.parse(text);
-          setError(json.error || "Access denied");
-        } catch {
-          setError("Access failed");
-        }
-      } else {
-        setError(err.response?.data?.error || "Network error");
-      }
+      setError("Network error");
     } finally {
       setLoading(false);
     }

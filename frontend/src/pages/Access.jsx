@@ -21,17 +21,18 @@ export default function Access() {
     try {
       const res = await API.post(`/access/${id}`, { pin });
 
-      // ✅ STRICT CHECK
       if (!res.data.success || !res.data.downloadUrl) {
+        console.log("Invalid response:", res.data);
         setError(res.data.error || "Access denied");
+        setLoading(false);
         return;
       }
 
-      // ✅ SUCCESS
       setDownloadUrl(res.data.downloadUrl);
       setFileName(res.data.fileName);
     } catch (err) {
-      setError(err.response?.data?.error || "Network error");
+      console.error("Access error:", err);
+      setError(err.response?.data?.error || err.message || "Network error");
     } finally {
       setLoading(false);
     }

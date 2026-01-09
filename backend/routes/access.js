@@ -9,14 +9,16 @@ router.post("/:id", async (req, res) => {
     const { pin } = req.body;
     const file = await File.findById(req.params.id);
 
-    if (!file) return res.status(404).json({ error: "File not found" });
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
 
-    // Expiry check
+    // ⏰ Expiry check
     if (file.expiresAt && new Date() > file.expiresAt) {
       return res.status(410).json({ error: "File expired" });
     }
 
-    // Attempt limit
+    // 🚫 Attempt limit
     if (file.attemptsLeft <= 0) {
       return res.status(403).json({ error: "Too many attempts" });
     }
@@ -30,15 +32,11 @@ router.post("/:id", async (req, res) => {
       });
     }
 
-    // ✅ Send Cloudinary URL
-    res.json({
-      success: true,
-      fileName: file.originalName,
-      downloadUrl: file.cloudinaryUrl,
-    });
+    // ✅ SUCCESS → REDIRECT TO FILE
+    return res.redirect(file.cloudinaryUrl);
   } catch (err) {
     console.error("Access error:", err);
-    res.status(500).json({ error: "Access failed" });
+    return res.status(500).json({ error: "Access failed" });
   }
 });
 

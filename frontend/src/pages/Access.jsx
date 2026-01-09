@@ -19,12 +19,25 @@ export default function Access() {
     setError("");
 
     try {
-      const res = await API.post(`/access/${id}`, { pin });
+      const res = await API.post(
+        `/access/${id}`,
+        { pin },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json", // 🔥 FORCE JSON
+          },
+        }
+      );
 
-      if (!res.data.success || !res.data.downloadUrl) {
-        console.log("Invalid response:", res.data);
+      console.log("Access response:", res.data);
+
+      if (typeof res.data !== "object") {
+        throw new Error("Non-JSON response received");
+      }
+
+      if (!res.data.success) {
         setError(res.data.error || "Access denied");
-        setLoading(false);
         return;
       }
 

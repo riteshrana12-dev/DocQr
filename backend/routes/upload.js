@@ -8,10 +8,16 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 /* ☁️ Helper: upload buffer to Cloudinary (Promise-based) */
-function uploadToCloudinary(buffer) {
+function uploadToCloudinary(buffer, originalName) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { resource_type: "auto" },
+      {
+        resource_type: "raw", // 🔥 FIX — DO NOT USE "auto"
+        folder: "docqr",
+        public_id: originalName, // preserve filename
+        use_filename: true,
+        unique_filename: false,
+      },
       (error, result) => {
         if (error) reject(error);
         else resolve(result);
@@ -31,7 +37,10 @@ router.post("/", upload.single("file"), async (req, res) => {
     }
 
     /* ☁ Upload file */
-    const result = await uploadToCloudinary(req.file.buffer);
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+      req.file.originalname
+    );
 
     /* 🔐 Hash PIN */
     const pinHash = await bcrypt.hash(pin, 10);
@@ -46,7 +55,6 @@ router.post("/", upload.single("file"), async (req, res) => {
       expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
     });
 
-    /* ✅ Respond ONLY after everything is ready */
     return res.json({
       success: true,
       fileId: fileDoc._id,

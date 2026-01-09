@@ -3,8 +3,6 @@ import API from "../services/api";
 import QRCode from "qrcode";
 import "./Upload.css";
 
-const QR_SIZE = 21 * 21; // QR v1 grid
-
 export default function Upload() {
   const [file, setFile] = useState(null);
   const [pin, setPin] = useState("");
@@ -24,7 +22,7 @@ export default function Upload() {
       return;
     }
 
-    // 🔄 RESET STATE
+    // 🔄 RESET
     setUploading(true);
     setProgress(0);
     setQr("");
@@ -40,18 +38,17 @@ export default function Upload() {
       const res = await API.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
 
-        // ⏳ Upload progress (0 → 90)
         onUploadProgress: (e) => {
           if (!e.total) return;
-          const percent = Math.min(Math.round((e.loaded / e.total) * 90), 90);
+          const percent = Math.round((e.loaded / e.total) * 100);
           setProgress(percent);
         },
       });
 
-      // ✅ Backend finished
+      // ✅ Backend response received
       const url = res.data.accessUrl;
 
-      // 🎯 Generate QR ONLY after response
+      // Generate REAL QR
       const qrDataUrl = await QRCode.toDataURL(url, {
         width: 240,
         margin: 2,
@@ -59,21 +56,14 @@ export default function Upload() {
 
       setQr(qrDataUrl);
       setAccessUrl(url);
-
-      // 🎉 FINAL STEP
-      setProgress(100);
       setQrReady(true);
     } catch (err) {
       console.error(err);
       setError("Upload failed. Please try again.");
-      setProgress(0);
     } finally {
       setUploading(false);
     }
   };
-
-  // 🔢 How many QR blocks to reveal
-  const visibleCells = Math.floor((progress / 100) * QR_SIZE);
 
   return (
     <div className="container">
@@ -94,23 +84,17 @@ export default function Upload() {
 
       {error && <p className="error">{error}</p>}
 
-      {/* 🔳 QR AREA (RESERVED SPACE) */}
-      {progress > 0 && (
+      {/* 🔳 QR AREA */}
+      {(uploading || qrReady) && (
         <div className="qr-wrapper">
-          {/* ⏳ QR SKELETON */}
+          {/* ⏳ DUMMY QR */}
           {!qrReady && (
             <>
-              <div className="qr-skeleton">
-                {Array.from({ length: QR_SIZE }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`qr-cell ${
-                      i < visibleCells ? "qr-cell-filled" : ""
-                    }`}
-                  />
+              <div className="qr-dummy">
+                {Array.from({ length: 21 * 21 }).map((_, i) => (
+                  <div key={i} className="qr-dummy-cell" />
                 ))}
               </div>
-
               <p className="progress-text">
                 Uploading & processing… {progress}%
               </p>
@@ -119,7 +103,7 @@ export default function Upload() {
 
           {/* ✅ REAL QR */}
           {qrReady && (
-            <div className="qr-section fade-in">
+            <div className="qr-section">
               <img src={qr} alt="QR Code" className="qr-image" />
               <p className="qr-text">Scan or open link</p>
 

@@ -1,3 +1,4 @@
+/* layout */
 .container {
   max-width: 420px;
   margin: 40px auto;
@@ -21,7 +22,6 @@ button {
   color: white;
   border: none;
   border-radius: 6px;
-  cursor: pointer;
 }
 
 button:disabled {
@@ -30,60 +30,46 @@ button:disabled {
 
 .error {
   color: red;
-  margin-top: 10px;
 }
 
-/* 🔳 QR WRAPPER */
+/* QR wrapper */
 .qr-wrapper {
   margin-top: 20px;
 }
 
-/* 🧩 QR SKELETON GRID */
-.qr-skeleton {
+/* 🧩 Dummy QR (static) */
+.qr-dummy {
   width: 240px;
   height: 240px;
   margin: 0 auto;
+  padding: 6px;
+  background: #e5e7eb;
   display: grid;
   grid-template-columns: repeat(21, 1fr);
   grid-template-rows: repeat(21, 1fr);
-  padding: 6px;
-  background: #e5e7eb;
   border-radius: 8px;
 }
 
-/* QR modules */
-.qr-cell {
-  background: transparent;
-  transition: background 0.15s ease;
+.qr-dummy-cell {
+  background: #9ca3af;
 }
 
-/* Appearing QR blocks */
-.qr-cell-filled {
-  background: #111827;
-}
-
-/* Progress text */
+/* Progress */
 .progress-text {
   margin-top: 10px;
   font-size: 14px;
   color: #374151;
 }
 
-/* ✅ FINAL QR */
-.qr-section {
-  text-align: center;
-}
-
+/* Real QR */
 .qr-image {
   width: 240px;
   height: 240px;
-  margin: 0 auto;
 }
 
 .qr-text {
   margin-top: 8px;
   font-size: 14px;
-  color: #374151;
 }
 
 .access-link {
@@ -91,22 +77,5 @@ button:disabled {
   margin-top: 6px;
   font-size: 14px;
   color: #2563eb;
-  text-decoration: underline;
   word-break: break-all;
-}
-
-/* ✨ FADE IN POLISH */
-.fade-in {
-  animation: fadeIn 0.4s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }

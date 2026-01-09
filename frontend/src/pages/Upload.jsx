@@ -8,11 +8,10 @@ export default function Upload() {
   const [pin, setPin] = useState("");
 
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [qrReady, setQrReady] = useState(false);
 
   const [qr, setQr] = useState("");
   const [accessUrl, setAccessUrl] = useState("");
-  const [qrReady, setQrReady] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -22,12 +21,11 @@ export default function Upload() {
       return;
     }
 
-    // 🔄 RESET
+    // reset
     setUploading(true);
-    setProgress(0);
+    setQrReady(false);
     setQr("");
     setAccessUrl("");
-    setQrReady(false);
     setError("");
 
     const formData = new FormData();
@@ -37,20 +35,12 @@ export default function Upload() {
     try {
       const res = await API.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-
-        onUploadProgress: (e) => {
-          if (!e.total) return;
-          const percent = Math.round((e.loaded / e.total) * 100);
-          setProgress(percent);
-        },
       });
 
-      // ✅ Backend response received
       const url = res.data.accessUrl;
 
-      // Generate REAL QR
       const qrDataUrl = await QRCode.toDataURL(url, {
-        width: 240,
+        width: 250,
         margin: 2,
       });
 
@@ -84,29 +74,17 @@ export default function Upload() {
 
       {error && <p className="error">{error}</p>}
 
-      {/* 🔳 QR AREA */}
+      {/* QR AREA */}
       {(uploading || qrReady) && (
         <div className="qr-wrapper">
-          {/* ⏳ DUMMY QR */}
-          {!qrReady && (
-            <>
-              <div className="qr-dummy">
-                {Array.from({ length: 21 * 21 }).map((_, i) => (
-                  <div key={i} className="qr-dummy-cell" />
-                ))}
-              </div>
-              <p className="progress-text">
-                Uploading & processing… {progress}%
-              </p>
-            </>
-          )}
+          {/* 🦴 SKELETON */}
+          {uploading && !qrReady && <div className="qr-skeleton shimmer" />}
 
           {/* ✅ REAL QR */}
           {qrReady && (
             <div className="qr-section">
               <img src={qr} alt="QR Code" className="qr-image" />
               <p className="qr-text">Scan or open link</p>
-
               <a
                 href={accessUrl}
                 target="_blank"

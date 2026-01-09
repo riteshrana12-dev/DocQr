@@ -5,46 +5,35 @@ const File = require("../models/File");
 const cloudinary = require("../utils/cloudinary");
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-function uploadToCloudinary(buffer, originalName) {
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // ⛔ 10MB MAX
+});
+
+function uploadToCloudinary(buffer, mimetype) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        resource_type: "raw", // REQUIRED
-        folder: "docqr-files", // 🔥 IMPORTANT
-        public_id: originalName, // keep original name
-        use_filename: true,
-        unique_filename: false,
+        resource_type: mimetype.startsWith("video") ? "video" : "raw",
       },
       (error, result) => {
-        if (error) {
-          console.error("Cloudinary error:", error);
-          reject(error);
-        } else {
-          resolve(result);
-        }
+        if (error) reject(error);
+        else resolve(result);
       }
     );
-
     stream.end(buffer);
   });
 }
 
 router.post("/", upload.single("file"), async (req, res) => {
   try {
-    const { pin } = req.body;
-
-    if (!req.file || !pin) {
+    if (!req.file || !req.body.pin)
       return res.status(400).json({ error: "File and PIN required" });
-    }
 
-    const result = await uploadToCloudinary(
-      req.file.buffer,
-      req.file.originalname
-    );
+    const result = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
 
-    const pinHash = await bcrypt.hash(pin, 10);
+    const pinHash = await bcrypt.hash(req.body.pin, 10);
 
     const fileDoc = await File.create({
       originalName: req.file.originalname,
@@ -57,12 +46,13 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     res.json({
       success: true,
-      fileId: fileDoc._id,
       accessUrl: `${process.env.FRONTEND_BASE_URL}/access/${fileDoc._id}`,
     });
   } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).json({ error: "Upload failed" });
+    console.error("UPLOAD ERROR:", err.message);
+    res
+      .status(500)
+      .json({ error: "Upload failed (file too large or unsupported)" });
   }
 });
 

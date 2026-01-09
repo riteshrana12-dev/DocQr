@@ -1,7 +1,7 @@
 import { useState } from "react";
 import API from "../services/api";
 import QRCode from "qrcode";
-import "./SharedDark.css";
+import "./Shared.css";
 
 export default function Upload() {
   const [file, setFile] = useState(null);

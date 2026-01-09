@@ -11,13 +11,19 @@ function uploadToCloudinary(buffer, originalName) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        resource_type: "raw", // 🔥 FIX
+        resource_type: "raw", // REQUIRED
+        folder: "docqr-files", // 🔥 IMPORTANT
+        public_id: originalName, // keep original name
         use_filename: true,
-        filename_override: originalName,
+        unique_filename: false,
       },
       (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
+        if (error) {
+          console.error("Cloudinary error:", error);
+          reject(error);
+        } else {
+          resolve(result);
+        }
       }
     );
 

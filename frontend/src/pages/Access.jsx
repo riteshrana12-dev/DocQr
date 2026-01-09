@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
+import API from "../services/api";
 import "../styles/SharedDark.css";
 
 export default function Access() {
@@ -9,7 +10,8 @@ export default function Access() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [fileUrl, setFileUrl] = useState("");
+  const [downloadUrl, setDownloadUrl] = useState("");
+  const [fileName, setFileName] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,23 +19,13 @@ export default function Access() {
     setError("");
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/access/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin }),
-      });
+      const res = await API.post(`/access/${id}`, { pin });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Access denied");
-        setLoading(false);
-        return;
-      }
-
-      const blob = await res.blob();
-      setFileUrl(URL.createObjectURL(blob));
-    } catch {
-      setError("Network error");
+      // ✅ backend sends JSON
+      setDownloadUrl(res.data.downloadUrl);
+      setFileName(res.data.fileName);
+    } catch (err) {
+      setError(err.response?.data?.error || "Network error");
     } finally {
       setLoading(false);
     }
@@ -42,9 +34,9 @@ export default function Access() {
   return (
     <div className="page">
       <div className="card">
-        {!fileUrl ? (
+        {!downloadUrl ? (
           <>
-            <h2>Secure Access</h2>
+            <h2>🔐 Secure Access</h2>
 
             <form onSubmit={handleSubmit}>
               <input
@@ -63,9 +55,20 @@ export default function Access() {
             {error && <p className="error">{error}</p>}
           </>
         ) : (
-          <a href={fileUrl} download className="access-link">
-            ⬇ Download File
-          </a>
+          <>
+            <h2>📄 File Ready</h2>
+
+            <p className="file-name">{fileName}</p>
+
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="access-link"
+            >
+              ⬇ Download File
+            </a>
+          </>
         )}
       </div>
     </div>

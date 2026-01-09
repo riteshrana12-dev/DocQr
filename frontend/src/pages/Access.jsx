@@ -10,9 +10,6 @@ export default function Access() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [downloadUrl, setDownloadUrl] = useState("");
-  const [fileName, setFileName] = useState("");
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -23,29 +20,50 @@ export default function Access() {
         `/access/${id}`,
         { pin },
         {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json", // 🔥 FORCE JSON
-          },
+          responseType: "blob", // 🔥 IMPORTANT — expect FILE, not JSON
         }
       );
 
-      console.log("Access response:", res.data);
+      // 📦 Create downloadable file
+      const blob = new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
 
-      if (typeof res.data !== "object") {
-        throw new Error("Non-JSON response received");
+      // 🔽 Auto-download
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Try to extract filename from headers
+      const contentDisposition = res.headers["content-disposition"];
+      let filename = "downloaded-file";
+
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
       }
 
-      if (!res.data.success) {
-        setError(res.data.error || "Access denied");
-        return;
-      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
 
-      setDownloadUrl(res.data.downloadUrl);
-      setFileName(res.data.fileName);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Access error:", err);
-      setError(err.response?.data?.error || err.message || "Network error");
+
+      // If backend returned JSON error instead of file
+      if (err.response?.data instanceof Blob) {
+        const text = await err.response.data.text();
+        try {
+          const json = JSON.parse(text);
+          setError(json.error || "Access denied");
+        } catch {
+          setError("Access failed");
+        }
+      } else {
+        setError(err.response?.data?.error || "Network error");
+      }
     } finally {
       setLoading(false);
     }
@@ -54,41 +72,23 @@ export default function Access() {
   return (
     <div className="page">
       <div className="card">
-        {!downloadUrl ? (
-          <>
-            <h2>🔐 Secure Access</h2>
+        <h2>🔐 Secure Access</h2>
 
-            <form onSubmit={handleSubmit}>
-              <input
-                type="password"
-                placeholder="Enter PIN"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                required
-              />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="password"
+            placeholder="Enter PIN"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            required
+          />
 
-              <button type="submit" disabled={loading}>
-                {loading ? "Verifying…" : "Unlock"}
-              </button>
-            </form>
+          <button type="submit" disabled={loading}>
+            {loading ? "Verifying…" : "Unlock & Download"}
+          </button>
+        </form>
 
-            {error && <p className="error">{error}</p>}
-          </>
-        ) : (
-          <>
-            <h2>📄 File Ready</h2>
-            <p>{fileName}</p>
-
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="access-link"
-            >
-              ⬇ Download File
-            </a>
-          </>
-        )}
+        {error && <p className="error">{error}</p>}
       </div>
     </div>
   );

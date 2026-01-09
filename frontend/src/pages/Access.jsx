@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import "./Shared.css";
+import "../styles/SharedDark.css";
 
 export default function Access() {
   const { id } = useParams();

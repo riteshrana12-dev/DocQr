@@ -1,0 +1,119 @@
+/* 🌙 Page */
+.page {
+  min-height: 100vh;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* 🧱 Card */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #020617;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  color: #e5e7eb;
+  text-align: center;
+}
+
+h2 {
+  margin-bottom: 16px;
+}
+
+/* ✏ Inputs */
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+  background: #020617;
+  color: #fff;
+  border: 1px solid #1e293b;
+}
+
+/* 🔘 Button */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+}
+
+button:disabled {
+  background: #475569;
+}
+
+/* ❌ Error */
+.error {
+  color: #f87171;
+  margin-top: 10px;
+}
+
+/* 🔳 QR Area */
+.qr-wrapper {
+  margin-top: 20px;
+}
+
+/* 🦴 Skeleton */
+.qr-skeleton {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+  border-radius: 10px;
+  background: #1e293b;
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 150%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 150%;
+  }
+}
+
+/* 📊 Progress */
+.progress-text {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #cbd5f5;
+}
+
+/* ✅ QR */
+.qr-image {
+  width: 240px;
+  height: 240px;
+  border-radius: 10px;
+}
+
+.access-link {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #60a5fa;
+  word-break: break-all;
+}

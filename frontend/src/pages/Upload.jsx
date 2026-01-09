@@ -11,7 +11,8 @@ export default function Upload() {
   const [progress, setProgress] = useState(0);
 
   const [qr, setQr] = useState("");
-  const [link, setLink] = useState("");
+  const [accessUrl, setAccessUrl] = useState("");
+
   const [qrReady, setQrReady] = useState(false);
 
   const [error, setError] = useState("");
@@ -22,11 +23,11 @@ export default function Upload() {
       return;
     }
 
-    // RESET EVERYTHING
+    // 🔄 RESET
     setUploading(true);
     setProgress(0);
     setQr("");
-    setLink("");
+    setAccessUrl("");
     setQrReady(false);
     setError("");
 
@@ -38,7 +39,7 @@ export default function Upload() {
       const res = await API.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
 
-        // ⏳ Upload progress (0 → 90)
+        // ⏳ Upload progress: 0 → 90
         onUploadProgress: (e) => {
           if (!e.total) return;
           const percent = Math.min(Math.round((e.loaded / e.total) * 90), 90);
@@ -46,23 +47,24 @@ export default function Upload() {
         },
       });
 
-      // ⏱ Backend done → generate QR
+      // ✅ Backend finished → access URL received
       const accessUrl = res.data.accessUrl;
 
+      // 🎯 Generate QR ONLY NOW
       const qrDataUrl = await QRCode.toDataURL(accessUrl, {
         width: 240,
         margin: 2,
       });
 
       setQr(qrDataUrl);
-      setLink(accessUrl);
+      setAccessUrl(accessUrl);
 
-      // FINAL STEP
+      // ✅ FINAL STATE
       setProgress(100);
       setQrReady(true);
     } catch (err) {
       console.error(err);
-      setError("Upload failed");
+      setError("Upload failed. Please try again.");
       setProgress(0);
     } finally {
       setUploading(false);
@@ -88,8 +90,8 @@ export default function Upload() {
 
       {error && <p className="error">{error}</p>}
 
-      {/* 🔳 QR DISPLAY AREA (ALWAYS RESERVED) */}
-      {(uploading || qrReady) && (
+      {/* 🔳 QR AREA (STAYS MOUNTED) */}
+      {progress > 0 && (
         <div className="qr-wrapper">
           {/* ⏳ SKELETON */}
           {!qrReady && (
@@ -97,7 +99,7 @@ export default function Upload() {
               <div className="qr-skeleton">
                 <div
                   className="qr-skeleton-fill"
-                  style={{ transform: `scaleY(${progress / 100})` }}
+                  style={{ height: `${progress}%` }}
                 />
               </div>
 
@@ -107,19 +109,19 @@ export default function Upload() {
             </>
           )}
 
-          {/* ✅ REAL QR */}
+          {/* ✅ FINAL QR */}
           {qrReady && (
             <div className="qr-section">
               <img src={qr} alt="QR Code" className="qr-image" />
               <p className="qr-text">Scan or open link</p>
 
               <a
-                href={link}
+                href={accessUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="access-link"
               >
-                {link}
+                {accessUrl}
               </a>
             </div>
           )}
